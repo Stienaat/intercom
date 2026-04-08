@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <title>Mini Intercom</title>
+</head>
+<body>
+  <h1>Mini Intercom</h1>
+  <input id="room" placeholder="room id (bv. 1234)" />
+  <button id="join">Join</button>
+  <p id="status">Nog niet verbonden</p>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  const socket = io();
+  const roomInput = document.getElementById('room');
+  const joinBtn = document.getElementById('join');
+  const statusEl = document.getElementById('status');
+
+  let pc;
+  let localStream;
+  let roomId;
+
+const rtcConfig = {
+  iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    {
+      urls: 'turn:relay.metered.ca:80',
+      username: 'openrelayproject',
+      credential: 'openrelayproject'
+    }
+  ]
+};
+
+  async function initMedia() {
+    if (localStream) return;
+
+    // 🎤 Microfoon opvragen met ruisonderdrukking
+    localStream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true
+      },
+      video: false
+    });
+
+    // 🔊 Microfoon iets stiller zetten (vermindert ruis & blazen)
+    const audioTracks = localStream.getAudioTracks();
+    audioTracks[0].applyConstraints({
+      advanced: [{ volume: 0.7 }]
+    });
+  }
+
+  function createPeerConnection() {
+    pc = new RTCPeerConnection(rtcConfig);
+
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        socket.emit('signal', { roomId, data: { candidate: event.candidate } });
+      }
+    };
+
+    pc.ontrack = (event) => {
+      const [remoteStream] = event.streams;
+      let audio = document.getElementById('remoteAudio');
+      if (!audio) {
+        audio = document.createElement('audio');
+        audio.id = 'remoteAudio';
+        audio.autoplay = true;
+        audio.playsInline = true;
+        document.body.appendChild(audio);
+      }
+
+      audio.srcObject = remoteStream;
+
+      // 🔉 Remote audio iets zachter (vermindert feedback)
+      audio.volume = 0.8;
+    };
+
+    localStream.getTracks().forEach((track) => {
+      pc.addTrack(track, localStream);
+    });
+  }
+
+  async function makeOffer() {
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    socket.emit('signal', { roomId, data: { description: pc.localDescription } });
+  }
+
+  async function handleSignal({ data }) {
+    if (data.description) {
+      const desc = data.description;
+      if (!pc.currentRemoteDescription && desc.type === 'offer') {
+        await pc.setRemoteDescription(desc);
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        socket.emit('signal', { roomId, data: { description: pc.localDescription } });
+      } else if (desc.type === 'answer') {
+        await pc.setRemoteDescription(desc);
+      }
+    } else if (data.candidate) {
+      try {
+        await pc.addIceCandidate(data.candidate);
+      } catch (e) {
+        console.error('Error adding ICE candidate', e);
+      }
+    }
+  }
+
+  joinBtn.onclick = async () => {
+    roomId = roomInput.value.trim();
+    if (!roomId) return;
+
+    await initMedia();
+    createPeerConnection();
+
+    socket.emit('join-room', roomId);
+    statusEl.textContent = 'In room ' + roomId + ', wacht op peer...';
+  };
+
+  socket.on('peer-joined', async () => {
+    statusEl.textContent = 'Peer gevonden, verbinding maken...';
+    await makeOffer();
+  });
+
+  socket.on('signal', handleSignal);
+</script>
+
+</body>
+</html>
