@@ -13,51 +13,61 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log('verbonden:', socket.id);
 
-  socket.on('join-room', ({ roomId, pin, name }) => {
-    console.log('join-room:', roomId, pin, name, socket.id);
+ socket.on('join-room', ({ roomId, pin, name }) => {
+  console.log('JOIN:', socket.id, roomId, pin, name);
 
-    if (!roomId || !pin || !name) {
-      socket.emit('join-error', 'Naam, room en PIN zijn verplicht');
-      return;
-    }
+  if (!rooms[roomId]) {
+    rooms[roomId] = {
+      pin,
+      users: []
+    };
+  }
 
-    if (!rooms[roomId]) {
-      rooms[roomId] = { pin, users: [] };
-    }
+  const room = rooms[roomId];
 
-    const room = rooms[roomId];
+  if (room.pin !== pin) {
+    console.log('BAD PIN');
+    socket.emit('join-error', 'Verkeerde PIN');
+    return;
+  }
 
-    if (room.pin !== pin) {
-      socket.emit('join-error', 'Verkeerde PIN');
-      return;
-    }
+  const alreadyInRoom = room.users.find(u => u.id === socket.id);
 
-    const alreadyInRoom = room.users.find(u => u.id === socket.id);
+  if (!alreadyInRoom && room.users.length >= 2) {
+    console.log('ROOM FULL');
+    socket.emit('join-error', 'Room is bezet');
+    return;
+  }
 
-    if (!alreadyInRoom && room.users.length >= 2) {
-      socket.emit('room-full');
-      return;
-    }
+  if (!alreadyInRoom) {
+    room.users.push({
+      id: socket.id,
+      name
+    });
+  }
 
-    if (!alreadyInRoom) {
-      room.users.push({ id: socket.id, name });
-      socket.join(roomId);
-    }
+  socket.join(roomId);
 
-    console.log('users in room', roomId, room.users);
+  console.log('ROOM USERS:', rooms[roomId].users);
 
-    if (room.users.length === 1) {
-      socket.emit('waiting');
-      return;
-    }
+  if (room.users.length === 1) {
+    socket.emit('joined', {
+      message: 'Je bent binnen. Wacht op tweede persoon.'
+    });
+  }
 
-    if (room.users.length === 2) {
-      const other = room.users.find(u => u.id !== socket.id);
+  if (room.users.length === 2) {
+    const [u1, u2] = room.users;
 
-      socket.emit('peer-ready', { name: other.name });
-      socket.to(roomId).emit('peer-ready', { name });
-    }
-  });
+    io.to(u1.id).emit('peer-ready', {
+      name: u2.name
+    });
+
+    io.to(u2.id).emit('peer-ready', {
+      name: u1.name
+    });
+  }
+});
 
   socket.on('call-user', ({ roomId }) => {
     const room = rooms[roomId];
