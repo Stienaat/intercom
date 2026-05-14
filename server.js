@@ -48,26 +48,33 @@ io.on('connection', (socket) => {
 
   socket.join(roomId);
 
-  console.log('ROOM USERS:', rooms[roomId].users);
+socket.join(roomId);
 
-  if (room.users.length === 1) {
-    socket.emit('joined', {
-      message: 'Je bent binnen. Wacht op tweede persoon.'
-    });
-  }
+console.log('ROOM USERS:', room.users.map(u => u.name));
 
-  if (room.users.length === 2) {
-    const [u1, u2] = room.users;
+if (room.users.length === 1) {
+  socket.emit('joined', {
+    message: 'Je bent binnen. Wacht op tweede persoon.'
+  });
+  return;
+}
 
-    io.to(u1.id).emit('peer-ready', {
-      name: u2.name
-    });
+if (room.users.length === 2) {
+  const otherUser = room.users.find(u => u.id !== socket.id);
+  const currentUser = room.users.find(u => u.id === socket.id);
 
-    io.to(u2.id).emit('peer-ready', {
-      name: u1.name
-    });
-  }
-});
+  console.log('PEER READY:', currentUser.name, '<->', otherUser.name);
+
+  socket.emit('peer-ready', {
+    name: otherUser.name
+  });
+
+  socket.to(roomId).emit('peer-ready', {
+    name: currentUser.name
+  });
+
+  return;
+}
 
   socket.on('call-user', ({ roomId }) => {
     const room = rooms[roomId];
