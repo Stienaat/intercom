@@ -261,6 +261,15 @@ socket.on('peer-left', () => {
   statusEl.textContent = 'Andere gebruiker is weg';
   callBtn.disabled = true;
 });
+
+socket.on('joined', ({ message }) => {
+  statusEl.textContent = message;
+});
+
+socket.on('join-error', (message) => {
+  alert(message);
+  statusEl.textContent = message;
+});
   
 </script>
 
