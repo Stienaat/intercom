@@ -28,15 +28,20 @@ io.on('connection', (socket) => {
       return;
     }
 
-    if (room.users.length >= 2) {
-      socket.emit('room-full');
-      return;
-    }
+const alreadyInRoom =
+  room.users.find(u => u.id === socket.id);
 
-    room.users.push({
-      id: socket.id,
-      name
-    });
+if (!alreadyInRoom && room.users.length >= 2) {
+  socket.emit('room-full');
+  return;
+}
+
+if (!alreadyInRoom) {
+  room.users.push({
+    id: socket.id,
+    name
+  });
+}
 
     socket.join(roomId);
 
