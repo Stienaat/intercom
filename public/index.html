@@ -139,6 +139,11 @@ pc.ontrack = (event) => {
   }).catch(err => {
     console.log('Audio play fout:', err);
   });
+  
+    localStream.getTracks().forEach((track) => {
+    pc.addTrack(track, localStream);
+  });
+}
 
   statusEl.textContent = 'Audio verbonden';
 };
