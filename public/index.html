@@ -60,8 +60,8 @@
   let roomId;
 
 const rtcConfig = {
-  iceTransportPolicy: 'relay',
   iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
     {
       urls: [
         'turn:openrelay.metered.ca:80',
@@ -73,6 +73,7 @@ const rtcConfig = {
     }
   ]
 };
+
   async function initMedia() {
     if (localStream) return;
 
@@ -85,12 +86,18 @@ const rtcConfig = {
       },
       video: false
     });
+console.log('LOCAL STREAM:', localStream);
+console.log('AUDIO TRACKS:', localStream.getAudioTracks());
+
+localStream.getAudioTracks().forEach(track => {
+  console.log('track enabled:', track.enabled);
+  console.log('track muted:', track.muted);
+  console.log('track readyState:', track.readyState);
+});
 
     // 🔊 Microfoon iets stiller zetten (vermindert ruis & blazen)
     const audioTracks = localStream.getAudioTracks();
-    audioTracks[0].applyConstraints({
-      advanced: [{ volume: 0.7 }]
-    });
+
   }
 function createPeerConnection() {
   pc = new RTCPeerConnection(rtcConfig);
@@ -114,18 +121,14 @@ function createPeerConnection() {
     const [remoteStream] = event.streams;
     let audio = document.getElementById('remoteAudio');
     if (!audio) {
-      audio = document.createElement('audio');
-      audio.id = 'remoteAudio';
-      audio.autoplay = true;
-      audio.playsInline = true;
-      document.body.appendChild(audio);
-    }
-
-   audio.srcObject = remoteStream;
+audio.srcObject = remoteStream;
+audio.autoplay = true;
+audio.playsInline = true;
+audio.muted = false;
 audio.volume = 1.0;
 
 audio.play().then(() => {
-  console.log('Audio gestart');
+  console.log('Remote audio speelt');
 }).catch(err => {
   console.log('Audio play fout:', err);
 });
