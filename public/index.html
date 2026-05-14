@@ -117,29 +117,31 @@ function createPeerConnection() {
     }
   };
 
-  pc.ontrack = (event) => {
-    const [remoteStream] = event.streams;
-    let audio = document.getElementById('remoteAudio');
-    if (!audio) {
-audio.srcObject = remoteStream;
-audio.autoplay = true;
-audio.playsInline = true;
-audio.muted = false;
-audio.volume = 1.0;
+pc.ontrack = (event) => {
+  const [remoteStream] = event.streams;
 
-audio.play().then(() => {
-  console.log('Remote audio speelt');
-}).catch(err => {
-  console.log('Audio play fout:', err);
-});
+  let audio = document.getElementById('remoteAudio');
 
-statusEl.textContent = 'Audio verbonden';
-  };
+  if (!audio) {
+    audio = document.createElement('audio');
+    audio.id = 'remoteAudio';
+    audio.autoplay = true;
+    audio.playsInline = true;
+    document.body.appendChild(audio);
+  }
 
-  localStream.getTracks().forEach((track) => {
-    pc.addTrack(track, localStream);
+  audio.srcObject = remoteStream;
+  audio.muted = false;
+  audio.volume = 1.0;
+
+  audio.play().then(() => {
+    console.log('Remote audio speelt');
+  }).catch(err => {
+    console.log('Audio play fout:', err);
   });
-}
+
+  statusEl.textContent = 'Audio verbonden';
+};
 
   async function makeOffer() {
     const offer = await pc.createOffer();
