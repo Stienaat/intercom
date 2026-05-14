@@ -6,8 +6,14 @@
 </head>
 <body>
   <h1>Mini Intercom</h1>
-  <input id="room" placeholder="room id (bv. 1234)" />
-  <button id="join">Join</button>
+	<input id="name" placeholder="jouw naam" />
+	<input id="room" placeholder="room id (bv. 1234)" />
+	<input id="pin" placeholder="PIN" type="password" />
+
+	<button id="join">Join</button>
+	<button id="call" disabled>Oproepen</button>
+
+<p id="people"></p>
   <p id="status">Nog niet verbonden</p>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -16,6 +22,14 @@
   const roomInput = document.getElementById('room');
   const joinBtn = document.getElementById('join');
   const statusEl = document.getElementById('status');
+  
+	const nameInput = document.getElementById('name');
+	const pinInput = document.getElementById('pin');
+	const peopleEl = document.getElementById('people');
+	const callBtn = document.getElementById('call');
+
+	let myName = '';
+	let remoteName = '';
 
   let pc;
   let localStream;
@@ -120,21 +134,34 @@ function createPeerConnection() {
     }
   }
 
-  joinBtn.onclick = async () => {
-    roomId = roomInput.value.trim();
-    if (!roomId) return;
+joinBtn.onclick = async () => {
+  roomId = roomInput.value.trim();
+  const pin = pinInput.value.trim();
+  myName = nameInput.value.trim();
 
-    await initMedia();
-    createPeerConnection();
+  if (!roomId || !pin || !myName) {
+    alert('Naam, room en PIN invullen');
+    return;
+  }
 
-    socket.emit('join-room', roomId);
-    statusEl.textContent = 'In room ' + roomId + ', wacht op peer...';
-  };
-
-  socket.on('peer-joined', async () => {
-    statusEl.textContent = 'Peer gevonden, verbinding maken...';
-    await makeOffer();
+  socket.emit('join-room', {
+    roomId,
+    pin,
+    name: myName
   });
+
+  statusEl.textContent = 'Verbinden...';
+};
+
+socket.on('peer-ready', ({ name }) => {
+  remoteName = name;
+
+  peopleEl.textContent = 'Verbonden met: ' + remoteName;
+
+  callBtn.disabled = false;
+
+  statusEl.textContent = remoteName + ' is beschikbaar';
+});
 
   socket.on('signal', handleSignal);
   
@@ -155,6 +182,41 @@ document.addEventListener('visibilitychange', async () => {
   if (document.visibilityState === 'visible' && wakeLock === null) {
     await keepScreenAwake();
   }
+});
+
+callBtn.onclick = async () => {
+  await initMedia();
+  createPeerConnection();
+
+  socket.emit('call-user', { roomId });
+  statusEl.textContent = 'Oproep verstuurd...';
+};
+
+socket.on('incoming-call', async ({ from }) => {
+  remoteName = from;
+
+  const ok = confirm(from + ' belt je. Opnemen?');
+
+  if (!ok) {
+    socket.emit('reject-call', { roomId });
+    return;
+  }
+
+  await initMedia();
+  createPeerConnection();
+
+  socket.emit('accept-call', { roomId });
+
+  statusEl.textContent = 'Oproep aangenomen';
+});
+
+socket.on('call-accepted', async () => {
+  statusEl.textContent = 'Oproep geaccepteerd';
+  await makeOffer();
+});
+
+socket.on('room-full', () => {
+  alert('Room is bezet');
 });
   
 </script>
