@@ -3,15 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <title>Mini Intercom</title>
+  
+<style>
+
+.cont {
+	display: grid; 
+	max-width: 400px; 
+	border: 1px solid #3599E4;
+	border-radius: 12px;
+	padding: 5 px; margin: 10px;
+	background: lightyellow;
+}
+
+.but {
+	margin: 5px;
+	border: 1px solid #3599E4";
+	border-radius: 12px;
+}
+
+</style>
+
+
 </head>
 <body>
   <h1>Mini Intercom</h1>
-	<input id="name" placeholder="jouw naam" />
-	<input id="room" placeholder="room id (bv. 1234)" />
-	<input id="pin" placeholder="PIN" type="password" />
+  <div id="container" class="cont"> 
+	<input id="name" class="but" placeholder="jouw naam" />
+	<input id="room" class="but" placeholder="room id (bv. 1234)" />
+	<input id="pin" class="but" placeholder="PIN" type="password" />
 
-	<button id="join">Join</button>
-	<button id="call" disabled>Oproepen</button>
+	<button id="join" class="but">Join</button>
+	<button id="call" class="but" disabled>Oproepen</button>
+	
+  </div
 
 <p id="people"></p>
   <p id="status">Nog niet verbonden</p>
