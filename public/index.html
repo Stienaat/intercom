@@ -8,19 +8,27 @@
 
 .cont {
 	display: grid; 
-	max-width: 400px; 
+	max-width: 300px; 
 	border: 1px solid #3599E4;
 	border-radius: 12px;
 	padding: 5 px; margin: 10px;
 	background: lightyellow;
 }
 
+.input {
+	margin: 5px;
+	padding: 5px;
+	border: 1px solid #3599E4;
+	border-radius: 6px;
+}
 .but {
 	margin: 5px;
-	border: 1px solid #3599E4";
-	border-radius: 12px;
+	padding: 5px;
+	max-width: 100px;
+	border: 1px solid #3599E4;
+	border-radius: 6px;
+	background: pink;
 }
-
 </style>
 
 
@@ -28,13 +36,13 @@
 <body>
   <h1>Mini Intercom</h1>
   <div id="container" class="cont"> 
-	<input id="name" class="but" placeholder="jouw naam" />
-	<input id="room" class="but" placeholder="room id (bv. 1234)" />
-	<input id="pin" class="but" placeholder="PIN" type="password" />
-
+	<input id="name" class="input" placeholder="jouw naam" />
+	<input id="room" class="input" placeholder="room id (bv. 1234)" />
+	<input id="pin" class="input" placeholder="PIN" type="password" />
+	<div id="buttons" style="display:flex; items-align: space-between";>
 	<button id="join" class="but">Join</button>
 	<button id="call" class="but" disabled>Oproepen</button>
-	
+	</div>
   </div>
 
 <p id="people"></p>
