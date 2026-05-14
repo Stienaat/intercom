@@ -35,7 +35,7 @@
 	<button id="join" class="but">Join</button>
 	<button id="call" class="but" disabled>Oproepen</button>
 	
-  </div
+  </div>
 
 <p id="people"></p>
   <p id="status">Nog niet verbonden</p>
@@ -174,10 +174,11 @@ joinBtn.onclick = async () => {
     name: myName
   });
 
-  statusEl.textContent = 'Verbinden...';
 };
 
 socket.on('peer-ready', ({ name }) => {
+  console.log('PEER READY RECEIVED:', name);
+
   remoteName = name;
 
   peopleEl.textContent = 'Verbonden met: ' + remoteName;
