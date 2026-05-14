@@ -121,9 +121,16 @@ function createPeerConnection() {
       document.body.appendChild(audio);
     }
 
-    audio.srcObject = remoteStream;
-    audio.volume = 0.8;
-    statusEl.textContent = 'Audio verbonden';
+   audio.srcObject = remoteStream;
+audio.volume = 1.0;
+
+audio.play().then(() => {
+  console.log('Audio gestart');
+}).catch(err => {
+  console.log('Audio play fout:', err);
+});
+
+statusEl.textContent = 'Audio verbonden';
   };
 
   localStream.getTracks().forEach((track) => {
