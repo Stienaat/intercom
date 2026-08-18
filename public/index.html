@@ -36,12 +36,12 @@
 <body>
   <h1>Mini Intercom</h1>
   <div id="container" class="cont"> 
-	<input id="name" class="input" placeholder="jouw naam" />
-	<input id="room" class="input" placeholder="room id (bv. 1234)" />
+	<input id="name" class="input" placeholder="naam" />
+	<input id="room" class="input" placeholder="room" />
 	<input id="pin" class="input" placeholder="PIN" type="password" />
-	<div id="buttons" style="display:flex; items-align: space-between";>
-	<button id="join" class="but">Join</button>
-	<button id="call" class="but" disabled>Oproepen</button>
+	<div id="buttons" style="display:flex; items-center: space-between";>
+		<button id="join" class="but">Verbindt</button>
+		<button id="call" class="but" disabled>Oproepen</button>
 	</div>
   </div>
 
@@ -193,7 +193,7 @@ socket.on('peer-ready', ({ name }) => {
 
   callBtn.disabled = false;
 
-  statusEl.textContent = remoteName + ' is beschikbaar';
+  statusEl.textContent = remoteName + ' is online';
 });
 
   socket.on('signal', handleSignal);
@@ -218,11 +218,16 @@ document.addEventListener('visibilitychange', async () => {
 });
 
 callBtn.onclick = async () => {
-  await initMedia();
-  createPeerConnection();
-
   socket.emit('call-user', { roomId });
   statusEl.textContent = 'Oproep verstuurd...';
+
+  try {
+    await initMedia();
+    createPeerConnection();
+  } catch (err) {
+    console.error('Media fout:', err);
+    statusEl.textContent = 'Microfoon kon niet starten';
+  }
 };
 
 socket.on('incoming-call', async ({ from }) => {
@@ -253,7 +258,7 @@ socket.on('room-full', () => {
 });
 
 socket.on('waiting', () => {
-  statusEl.textContent = 'Wachten op tweede toestel...';
+  statusEl.textContent = 'Wachten op contact...';
 });
 
 socket.on('join-error', (message) => {
@@ -267,7 +272,7 @@ socket.on('room-full', () => {
 });
 
 socket.on('peer-left', () => {
-  statusEl.textContent = 'Andere gebruiker is weg';
+  statusEl.textContent = 'Contact is verbroken!';
   callBtn.disabled = true;
 });
 
