@@ -135,6 +135,8 @@
   let localStream;
   let roomId;
 
+  let joinedRoom = false;
+
   const rtcConfig = {
     iceServers: [
       { urls: 'stun:stun.l.google.com:19302' },
@@ -229,6 +231,32 @@ function createPeerConnection() {
   }
 
 joinBtn.onclick = async () => {
+
+  if (joinedRoom) {
+    socket.emit('leave-room', roomId);
+
+    if (pc) {
+      pc.close();
+      pc = null;
+    }
+
+    if (localStream) {
+      localStream.getTracks().forEach(track => track.stop());
+      localStream = null;
+    }
+
+    joinedRoom = false;
+    roomId = '';
+
+    joinBtn.textContent = 'Verbinden';
+    callBtn.disabled = true;
+
+    peopleEl.textContent = '';
+    statusEl.textContent = 'Niet verbonden';
+
+    return;
+  }
+
   roomId = roomInput.value.trim();
   const pin = pinInput.value.trim();
   myName = nameInput.value.trim();
@@ -244,6 +272,9 @@ joinBtn.onclick = async () => {
     name: myName
   });
 
+  statusEl.textContent = 'Verbinden...';
+};
+
 };
 
 socket.on('peer-ready', ({ name }) => {
@@ -253,6 +284,8 @@ socket.on('peer-ready', ({ name }) => {
   statusEl.textContent = remoteName + ' is online';
 
   callBtn.disabled = false;
+
+  joinedRoom = true;
   joinBtn.textContent = 'Sluiten';
 });
 
@@ -344,8 +377,12 @@ socket.on('room-full', () => {
 });
 
 socket.on('peer-left', () => {
-  statusEl.textContent = 'Contact is verbroken!';
+  joinedRoom = false;
+  joinBtn.textContent = 'Verbinden';
   callBtn.disabled = true;
+
+  peopleEl.textContent = '';
+  statusEl.textContent = 'Contact is verbroken!';
 });
 
 socket.on('joined', ({ message }) => {
