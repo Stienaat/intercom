@@ -2,47 +2,103 @@
 <html lang="nl">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Mini Intercom</title>
-  
-<style>
 
-.cont {
-	display: grid; 
-	max-width: 300px; 
-	border: 1px solid #3599E4;
-	border-radius: 12px;
-	padding: 5 px; margin: 10px;
-	background: lightyellow;
-}
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #ffffff;
+      color: #222;
+    }
 
-.input {
-	margin: 5px;
-	padding: 5px;
-	border: 1px solid #3599E4;
-	border-radius: 6px;
-}
-.but {
-	margin: 5px;
-	padding: 5px;
-	max-width: 100px;
-	border: 1px solid #3599E4;
-	border-radius: 6px;
-	background: pink;
-}
-</style>
+    .app {
+      max-width: 420px;
+      margin: 0 auto;
+      padding: 24px;
+    }
 
+    h1 {
+      margin: 0 0 24px;
+      font-size: 28px;
+    }
 
+    .field {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 12px;
+      margin-bottom: 12px;
+      font-size: 16px;
+      border: 1px solid #aaa;
+      border-radius: 4px;
+    }
+
+    .button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      background: #e0e0e0;
+    }
+
+    .button:disabled {
+      opacity: 0.45;
+    }
+
+    #people,
+    #status {
+      margin-top: 18px;
+      font-size: 18px;
+    }
+  </style>
 </head>
+
 <body>
-  <h1>Mini Intercom</h1>
-  <div id="container" class="cont"> 
-	<input id="name" class="input" placeholder="naam" />
-	<input id="room" class="input" placeholder="room" />
-	<input id="pin" class="input" placeholder="PIN" type="password" />
-	<div id="buttons" style="display:flex; items-center: space-between";>
-		<button id="join" class="but">Verbindt</button>
-		<button id="call" class="but" disabled>Oproepen</button>
-	</div>
+
+  <div class="app">
+
+    <h1>Mini Intercom</h1>
+
+    <input
+      id="name"
+      class="field"
+      placeholder="Naam"
+    />
+
+    <input
+      id="room"
+      class="field"
+      placeholder="Room"
+    />
+
+    <input
+      id="pin"
+      class="field"
+      placeholder="PIN"
+      type="password"
+    />
+
+    <button
+      id="join"
+      class="button"
+    >
+      Verbinden
+    </button>
+
+    <button
+      id="call"
+      class="button"
+      disabled
+    >
+      Oproepen
+    </button>
+
+    <p id="people"></p>
+    <p id="status">Nog niet verbonden</p>
+
   </div>
 
 <p id="people"></p>
@@ -87,19 +143,13 @@
 
     // 🎤 Microfoon opvragen met ruisonderdrukking
     localStream = await navigator.mediaDevices.getUserMedia({
-      audio: {
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
-      },
+      audio: true,
       video: false
     });
 
     // 🔊 Microfoon iets stiller zetten (vermindert ruis & blazen)
     const audioTracks = localStream.getAudioTracks();
-    audioTracks[0].applyConstraints({
-      advanced: [{ volume: 0.7 }]
-    });
+   
   }
 function createPeerConnection() {
   pc = new RTCPeerConnection(rtcConfig);
@@ -225,9 +275,15 @@ callBtn.onclick = async () => {
     await initMedia();
     createPeerConnection();
   } catch (err) {
-    console.error('Media fout:', err);
-    statusEl.textContent = 'Microfoon kon niet starten';
-  }
+  console.error(
+    'Media fout:',
+    err.name,
+    err.message
+  );
+
+  statusEl.textContent =
+    'Microfoon fout: ' + err.name + ' - ' + err.message;
+}
 };
 
 socket.on('incoming-call', async ({ from }) => {
@@ -239,13 +295,19 @@ socket.on('incoming-call', async ({ from }) => {
     socket.emit('reject-call', { roomId });
     return;
   }
-
+  
+  try {
   await initMedia();
   createPeerConnection();
 
   socket.emit('accept-call', { roomId });
-
   statusEl.textContent = 'Oproep aangenomen';
+  } catch (err) {
+    console.error('Media fout:', err.name, err.message);
+    statusEl.textContent =
+      'Microfoon fout: ' + err.name + ' - ' + err.message;
+  }
+
 });
 
 socket.on('call-accepted', async () => {
