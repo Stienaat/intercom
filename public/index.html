@@ -114,6 +114,9 @@
     <p id="status">Nog niet verbonden</p>
 
   </div>
+      <audio id="ringtone" preload="auto" loop>
+      <source src="/ringtone.mp3" type="audio/mpeg">
+  </audio>
 
 
 <script src="/socket.io/socket.io.js"></script>
@@ -127,6 +130,8 @@
 	const pinInput = document.getElementById('pin');
 	const peopleEl = document.getElementById('people');
 	const callBtn = document.getElementById('call');
+
+  const ringtoneEl = document.getElementById('ringtone');
 
 	let myName = '';
 	let remoteName = '';
@@ -165,6 +170,19 @@
     const audioTracks = localStream.getAudioTracks();
    
   }
+
+function startRingtone() {
+  ringtoneEl.currentTime = 0;
+  ringtoneEl.play().catch(err => {
+    console.log('Ringtone kon niet starten:', err);
+  });
+}
+
+function stopRingtone() {
+  ringtoneEl.pause();
+  ringtoneEl.currentTime = 0;
+}
+
 function createPeerConnection() {
   pc = new RTCPeerConnection(rtcConfig);
 
@@ -329,14 +347,20 @@ callBtn.onclick = async () => {
 };
 
 socket.on('incoming-call', async ({ from }) => {
+    
+  startRingtone();
   remoteName = from;
+
 
   const ok = confirm(from + ' belt je. Opnemen?');
 
   if (!ok) {
+    stopRingtone();
     socket.emit('reject-call', { roomId });
     return;
   }
+
+  stopRingtone();
   
   try {
   await initMedia();

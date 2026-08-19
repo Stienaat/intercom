@@ -96,6 +96,19 @@ socket.on('join-room', ({ roomId, pin, name }) => {
       }
     }
   });
+  socket.on('leave-room', (roomId) => {
+  const room = rooms[roomId];
+  if (!room) return;
+
+  room.users = room.users.filter(u => u.id !== socket.id);
+
+  socket.leave(roomId);
+  socket.to(roomId).emit('peer-left');
+
+  if (room.users.length === 0) {
+    delete rooms[roomId];
+  }
+});
 });
 
 const PORT = process.env.PORT || 3000;
