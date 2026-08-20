@@ -79,6 +79,19 @@ socket.on('join-room', ({ roomId, pin, name }) => {
     socket.to(roomId).emit('call-rejected');
   });
 
+  socket.on('leave-message', ({ roomId, from, message }) => {
+  if (!roomId || !message) return;
+
+  const text = String(message).trim().slice(0, 100);
+  if (!text) return;
+
+  socket.to(roomId).emit('message-received', {
+    from: from || 'Contact',
+    message: text,
+    time: new Date().toISOString()
+  });
+});
+
   socket.on('signal', ({ roomId, data }) => {
     socket.to(roomId).emit('signal', { data });
   });
@@ -109,6 +122,8 @@ socket.on('join-room', ({ roomId, pin, name }) => {
     delete rooms[roomId];
   }
 });
+
+
 });
 
 const PORT = process.env.PORT || 3000;

@@ -112,6 +112,7 @@
 
     <p id="people"></p>
     <p id="status">Nog niet verbonden</p>
+    <div id="messageBox"></div>
 
   </div>
       <audio id="ringtone" preload="auto" loop>
@@ -132,6 +133,7 @@
 	const callBtn = document.getElementById('call');
 
   const ringtoneEl = document.getElementById('ringtone');
+  const messageBox = document.getElementById('messageBox');
 
 	let myName = '';
 	let remoteName = '';
@@ -139,6 +141,7 @@
   let pc;
   let localStream;
   let roomId;
+  let callTimer = null;
 
   let joinedRoom = false;
 
@@ -327,9 +330,34 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
+function offerMessage() {
+  const text = prompt(
+    'Geen antwoord. Korte boodschap nalaten?'
+  );
+
+  if (!text) return;
+
+  const message = text.trim().slice(0, 100);
+  if (!message) return;
+
+  socket.emit('leave-message', {
+    roomId,
+    from: myName,
+    message
+  });
+
+  statusEl.textContent = 'Boodschap verstuurd';
+}
+
 callBtn.onclick = async () => {
   socket.emit('call-user', { roomId });
   statusEl.textContent = 'Oproep verstuurd...';
+
+clearTimeout(callTimer);
+
+callTimer = setTimeout(() => {
+  offerMessage();
+}, 25000);
 
   try {
     await initMedia();
@@ -377,6 +405,7 @@ socket.on('incoming-call', async ({ from }) => {
 });
 
 socket.on('call-accepted', async () => {
+  clearTimeout(callTimer);
   statusEl.textContent = 'Oproep geaccepteerd';
   await makeOffer();
 });
@@ -397,6 +426,10 @@ socket.on('join-error', (message) => {
 socket.on('room-full', () => {
   alert('Room is bezet');
   statusEl.textContent = 'Room is bezet';
+});
+
+socket.on('message-received', ({ from, message }) => {
+  messageBox.textContent = from + ': ' + message;
 });
 
 socket.on('peer-left', () => {
