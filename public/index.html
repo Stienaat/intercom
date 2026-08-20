@@ -256,15 +256,7 @@ joinBtn.onclick = async () => {
   if (joinedRoom) {
     socket.emit('leave-room', roomId);
 
-    if (pc) {
-      pc.close();
-      pc = null;
-    }
-
-    if (localStream) {
-      localStream.getTracks().forEach(track => track.stop());
-      localStream = null;
-    }
+    resetCall();
 
     joinedRoom = false;
     roomId = '';
@@ -330,6 +322,23 @@ document.addEventListener('visibilitychange', async () => {
   }
 });
 
+function resetCall() {
+  clearTimeout(callTimer);
+  callTimer = null;
+
+  stopRingtone();
+
+  if (pc) {
+    pc.close();
+    pc = null;
+  }
+
+  if (localStream) {
+    localStream.getTracks().forEach(track => track.stop());
+    localStream = null;
+  }
+}
+
 function offerMessage() {
   const text = prompt(
     'Geen antwoord. Korte boodschap nalaten?'
@@ -340,14 +349,24 @@ function offerMessage() {
   const message = text.trim().slice(0, 100);
   if (!message) return;
 
-  socket.emit('leave-message', {
-    roomId,
-    from: myName,
-    message
-  });
+socket.emit('leave-message', {
+  roomId,
+  from: myName,
+  message
+});
 
-  statusEl.textContent = 'Boodschap verstuurd';
-}
+socket.emit('leave-room', roomId);
+
+resetCall();
+
+joinedRoom = false;
+roomId = '';
+
+joinBtn.textContent = 'Verbinden';
+callBtn.disabled = true;
+
+peopleEl.textContent = '';
+statusEl.textContent = 'Boodschap verstuurd - niet verbonden';
 
 callBtn.onclick = async () => {
   socket.emit('call-user', { roomId });
@@ -356,6 +375,8 @@ callBtn.onclick = async () => {
 clearTimeout(callTimer);
 
 callTimer = setTimeout(() => {
+  socket.emit('cancel-call', { roomId });
+  resetCall();
   offerMessage();
 }, 25000);
 
@@ -406,6 +427,10 @@ socket.on('incoming-call', async ({ from }) => {
 
 socket.on('call-accepted', async () => {
   clearTimeout(callTimer);
+  callTimer = null;
+
+  stopRingtone();
+
   statusEl.textContent = 'Oproep geaccepteerd';
   await makeOffer();
 });
@@ -433,6 +458,8 @@ socket.on('message-received', ({ from, message }) => {
 });
 
 socket.on('peer-left', () => {
+  resetCall();
+
   joinedRoom = false;
   joinBtn.textContent = 'Verbinden';
   callBtn.disabled = true;

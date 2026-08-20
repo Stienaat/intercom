@@ -78,6 +78,14 @@ socket.on('join-room', ({ roomId, pin, name }) => {
   socket.on('reject-call', ({ roomId }) => {
     socket.to(roomId).emit('call-rejected');
   });
+  socket.on('call-cancelled', () => {
+  resetCall();
+  statusEl.textContent = 'Oproep niet beantwoord';
+});
+
+  socket.on('cancel-call', ({ roomId }) => {
+    socket.to(roomId).emit('call-cancelled');
+  });
 
   socket.on('leave-message', ({ roomId, from, message }) => {
   if (!roomId || !message) return;
