@@ -17,7 +17,10 @@ socket.on('join-room', ({ roomId, pin, name }) => {
   console.log('JOIN:', socket.id, roomId, pin, name);
 
   if (!rooms[roomId]) {
-    rooms[roomId] = { pin, users: [] };
+    rooms[roomId] = {
+      pin,
+      users: []
+    };
   }
 
   const room = rooms[roomId];
@@ -27,20 +30,35 @@ socket.on('join-room', ({ roomId, pin, name }) => {
     return;
   }
 
-  const alreadyInRoom = room.users.find(u => u.id === socket.id);
+  // Oude sockets die niet meer bestaan opruimen
+  room.users = room.users.filter(user =>
+    io.sockets.sockets.has(user.id)
+  );
 
-  if (!alreadyInRoom && room.users.length >= 2) {
-    socket.emit('join-error', 'Room is bezet');
-    return;
-  }
+  // Deze socket niet dubbel toevoegen
+  const alreadyInRoom =
+    room.users.some(user => user.id === socket.id);
 
   if (!alreadyInRoom) {
-    room.users.push({ id: socket.id, name });
+
+    if (room.users.length >= 2) {
+      socket.emit('join-error', 'Room is bezet');
+      return;
+    }
+
+    room.users.push({
+      id: socket.id,
+      name
+    });
   }
 
   socket.join(roomId);
 
-  console.log('AANTAL USERS IN ROOM', roomId, room.users.length);
+  console.log(
+    'AANTAL USERS IN ROOM',
+    roomId,
+    room.users.length
+  );
 
   if (room.users.length === 1) {
     socket.emit('joined', {
@@ -50,14 +68,31 @@ socket.on('join-room', ({ roomId, pin, name }) => {
   }
 
   if (room.users.length === 2) {
-    const otherUser = room.users.find(u => u.id !== socket.id);
-    const currentUser = room.users.find(u => u.id === socket.id);
 
-    console.log('PEER READY:', currentUser.name, '<->', otherUser.name);
+    const currentUser =
+      room.users.find(user => user.id === socket.id);
 
-    socket.emit('peer-ready', { name: otherUser.name });
-    socket.to(roomId).emit('peer-ready', { name: currentUser.name });
-    return;
+    const otherUser =
+      room.users.find(user => user.id !== socket.id);
+
+    if (!currentUser || !otherUser) {
+      return;
+    }
+
+    console.log(
+      'PEER READY:',
+      currentUser.name,
+      '<->',
+      otherUser.name
+    );
+
+    socket.emit('peer-ready', {
+      name: otherUser.name
+    });
+
+    socket.to(roomId).emit('peer-ready', {
+      name: currentUser.name
+    });
   }
 });
 
@@ -78,15 +113,12 @@ socket.on('join-room', ({ roomId, pin, name }) => {
   socket.on('reject-call', ({ roomId }) => {
     socket.to(roomId).emit('call-rejected');
   });
-  socket.on('call-cancelled', () => {
-  resetCall();
-  statusEl.textContent = 'Oproep niet beantwoord';
+
+
+ socket.on('cancel-call', ({ roomId }) => {
+  console.log('CANCEL CALL:', roomId);
+  socket.to(roomId).emit('call-cancelled');
 });
-
-  socket.on('cancel-call', ({ roomId }) => {
-    socket.to(roomId).emit('call-cancelled');
-  });
-
   socket.on('leave-message', ({ roomId, from, message }) => {
   if (!roomId || !message) return;
 

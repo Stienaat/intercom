@@ -349,24 +349,26 @@ function offerMessage() {
   const message = text.trim().slice(0, 100);
   if (!message) return;
 
-socket.emit('leave-message', {
-  roomId,
-  from: myName,
-  message
-});
+  socket.emit('leave-message', {
+    roomId,
+    from: myName,
+    message
+  });
 
-socket.emit('leave-room', roomId);
+  socket.emit('leave-room', roomId);
 
-resetCall();
+  resetCall();
 
-joinedRoom = false;
-roomId = '';
+  joinedRoom = false;
+  roomId = '';
 
-joinBtn.textContent = 'Verbinden';
-callBtn.disabled = true;
+  joinBtn.textContent = 'Verbinden';
+  callBtn.disabled = true;
 
-peopleEl.textContent = '';
-statusEl.textContent = 'Boodschap verstuurd - niet verbonden';
+  peopleEl.textContent = '';
+  statusEl.textContent =
+    'Boodschap verstuurd - niet verbonden';
+} 
 
 callBtn.onclick = async () => {
   socket.emit('call-user', { roomId });
