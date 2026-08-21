@@ -316,6 +316,14 @@ joinBtn.onclick = async () => {
     peopleEl.textContent = '';
     statusEl.textContent = 'Niet verbonden';
 
+    nameInput.value = '';
+roomInput.value = '';
+pinInput.value = '';
+
+messageBox.textContent = '';
+incomingCallBox.style.display = 'none';
+incomingCallText.textContent = '';
+
     return;
   }
 
