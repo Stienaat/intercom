@@ -371,17 +371,22 @@ enableSoundBtn.onclick = async () => {
       connectToRoom();
     }
 
-  } catch (err) {
-    ringtoneEl.volume = 1;
+} catch (err) {
+  ringtoneEl.volume = 1;
 
-    console.error(
-      'WEB AUDIO UNLOCK FAILED:',
-      err
-    );
+  console.error(
+    'WEB AUDIO UNLOCK FAILED:',
+    err.name,
+    err.message,
+    err
+  );
 
-    statusEl.textContent =
-      'Geluid kon niet worden ingeschakeld';
-  }
+  statusEl.textContent =
+    'Geluid fout: ' +
+    err.name +
+    ' - ' +
+    err.message;
+}
 };
 
 function connectToroom() {
