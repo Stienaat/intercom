@@ -539,6 +539,11 @@ socket.on('call-accepted', async () => {
   await makeOffer();
 });
 
+socket.on('call-rejected', () => {
+  resetCall();
+  statusEl.textContent = 'Oproep geweigerd';
+});
+
 socket.on('room-full', () => {
   alert('Room is bezet');
 });
