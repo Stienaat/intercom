@@ -559,6 +559,12 @@ socket.on('call-rejected', ({ message } = {}) => {
   }
 });
 
+socket.on('reject-call', ({ roomId, message }) => {
+  socket.to(roomId).emit('call-rejected', {
+    message: String(message || '').trim().slice(0, 100)
+  });
+});
+
 socket.on('room-full', () => {
   alert('Room is bezet');
 });

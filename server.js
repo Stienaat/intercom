@@ -110,9 +110,11 @@ socket.on('join-room', ({ roomId, pin, name }) => {
     socket.to(roomId).emit('call-accepted');
   });
 
-  socket.on('reject-call', ({ roomId }) => {
-    socket.to(roomId).emit('call-rejected');
+socket.on('reject-call', ({ roomId, message }) => {
+  socket.to(roomId).emit('call-rejected', {
+    message: String(message || '').trim().slice(0, 100)
   });
+});
 
 
  socket.on('cancel-call', ({ roomId }) => {
