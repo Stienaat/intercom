@@ -547,9 +547,16 @@ socket.on('call-accepted', async () => {
   await makeOffer();
 });
 
-socket.on('call-rejected', () => {
+socket.on('call-rejected', ({ message } = {}) => {
   resetCall();
-  statusEl.textContent = 'Oproep geweigerd';
+
+  if (message) {
+    statusEl.textContent =
+      'Oproep geweigerd: ' + message;
+  } else {
+    statusEl.textContent =
+      'Oproep geweigerd';
+  }
 });
 
 socket.on('room-full', () => {
