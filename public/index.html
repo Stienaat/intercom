@@ -101,6 +101,13 @@
     >
       Verbinden
     </button>
+    <button
+  id="enableSound"
+  class="button"
+  style="display:none;"
+>
+  Geluid inschakelen
+</button>
 
     <button
       id="call"
@@ -158,7 +165,12 @@
 
   const acceptIncoming =
   document.getElementById('acceptIncoming');
+  
+  const enableSoundBtn =
+  document.getElementById('enableSound');
 
+let soundUnlocked = false;
+let pendingConnect = false;
 	let myName = '';
 	let remoteName = '';
 
@@ -168,10 +180,6 @@
   let callTimer = null;
 
   let joinedRoom = false;
-
-  let ringtoneContext = null;
-  let ringtoneBuffer = null;
-  let ringtoneSource = null;
 
   const rtcConfig = {
     iceServers: [
@@ -203,50 +211,38 @@
   }
 
 function startRingtone() {
-  if (!ringtoneContext || !ringtoneBuffer) {
-    console.log('Ringtone nog niet voorbereid');
-    return;
-  }
+  ringtoneEl.currentTime = 0;
+  ringtoneEl.volume = 1;
 
-  stopRingtone();
-
-  ringtoneSource = ringtoneContext.createBufferSource();
-  ringtoneSource.buffer = ringtoneBuffer;
-  ringtoneSource.loop = true;
-  ringtoneSource.connect(ringtoneContext.destination);
-  ringtoneSource.start();
+  ringtoneEl.play().catch(err => {
+    console.log('Ringtone starten mislukt:', err);
+  });
 }
 
 function stopRingtone() {
-  if (ringtoneSource) {
-    try {
-      ringtoneSource.stop();
-    } catch (e) {
-    }
-
-    ringtoneSource.disconnect();
-    ringtoneSource = null;
-  }
+  ringtoneEl.pause();
+  ringtoneEl.currentTime = 0;
 }
 
-async function unlockRingtone() {
-  try {
-    if (!ringtoneContext) {
-      ringtoneContext = new AudioContext();
-    }
+function unlockRingtone() {
+  const oldVolume = ringtoneEl.volume;
 
-    await ringtoneContext.resume();
+  ringtoneEl.volume = 0;
 
-    if (!ringtoneBuffer) {
-      const response = await fetch('/ringtone.mp3');
-      const arrayBuffer = await response.arrayBuffer();
-      ringtoneBuffer =
-        await ringtoneContext.decodeAudioData(arrayBuffer);
-    }
+  const playPromise = ringtoneEl.play();
 
-    console.log('Ringtone audio klaar');
-  } catch (err) {
-    console.log('Ringtone voorbereiden mislukt:', err);
+  if (playPromise !== undefined) {
+    playPromise.then(() => {
+      setTimeout(() => {
+        ringtoneEl.pause();
+        ringtoneEl.currentTime = 0;
+        ringtoneEl.volume = oldVolume;
+        console.log('Ringtone vrijgegeven');
+      }, 100);
+    }).catch(err => {
+      ringtoneEl.volume = oldVolume;
+      console.log('Ringtone vrijgeven mislukt:', err);
+    });
   }
 }
 
@@ -317,6 +313,7 @@ function createPeerConnection() {
 
 joinBtn.onclick = async () => {
 
+  // SLUITEN
   if (joinedRoom) {
     socket.emit('leave-room', roomId);
 
@@ -334,8 +331,60 @@ joinBtn.onclick = async () => {
     return;
   }
 
-  await unlockRingtone();
+  // EERSTE KEER: geluid eerst inschakelen
+  if (!soundUnlocked) {
+    pendingConnect = true;
 
+    enableSoundBtn.style.display = 'block';
+
+    statusEl.textContent =
+      'Klik Geluid inschakelen';
+
+    return;
+  }
+
+  // GELUID IS AL INGESCHAKELD
+  connectToRoom();
+};
+
+enableSoundBtn.onclick = async () => {
+  try {
+    ringtoneEl.volume = 0;
+
+    await ringtoneEl.play();
+
+    await new Promise(resolve =>
+      setTimeout(resolve, 250)
+    );
+
+    ringtoneEl.pause();
+    ringtoneEl.currentTime = 0;
+    ringtoneEl.volume = 1;
+
+    soundUnlocked = true;
+    enableSoundBtn.style.display = 'none';
+
+    console.log('WEB AUDIO UNLOCKED');
+
+    if (pendingConnect) {
+      pendingConnect = false;
+      connectToRoom();
+    }
+
+  } catch (err) {
+    ringtoneEl.volume = 1;
+
+    console.error(
+      'WEB AUDIO UNLOCK FAILED:',
+      err
+    );
+
+    statusEl.textContent =
+      'Geluid kon niet worden ingeschakeld';
+  }
+};
+
+function connectToroom() {
   roomId = roomInput.value.trim();
   const pin = pinInput.value.trim();
   myName = nameInput.value.trim();
@@ -352,7 +401,7 @@ joinBtn.onclick = async () => {
   });
 
   statusEl.textContent = 'Verbinden...';
-};
+}
 
 
 socket.on('peer-ready', ({ name }) => {
