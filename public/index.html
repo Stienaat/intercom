@@ -578,11 +578,22 @@ socket.on('peer-left', () => {
   resetCall();
 
   joinedRoom = false;
+  roomId = '';
+
   joinBtn.textContent = 'Verbinden';
   callBtn.disabled = true;
 
   peopleEl.textContent = '';
-  statusEl.textContent = 'Contact is verbroken!';
+  statusEl.textContent = 'Niet verbonden';
+
+  nameInput.value = '';
+  roomInput.value = '';
+  pinInput.value = '';
+
+  messageBox.textContent = '';
+
+  incomingCallBox.style.display = 'none';
+  incomingCallText.textContent = '';
 });
 
 socket.on('joined', ({ message }) => {
