@@ -101,13 +101,6 @@
     >
       Verbinden
     </button>
-    <button
-  id="enableSound"
-  class="button"
-  style="display:none;"
->
-  Geluid inschakelen
-</button>
 
     <button
       id="call"
@@ -166,11 +159,6 @@
   const acceptIncoming =
   document.getElementById('acceptIncoming');
   
-  const enableSoundBtn =
-  document.getElementById('enableSound');
-
-let soundUnlocked = false;
-let pendingConnect = false;
 	let myName = '';
 	let remoteName = '';
 
@@ -347,46 +335,20 @@ joinBtn.onclick = async () => {
   connectToRoom();
 };
 
-enableSoundBtn.onclick = async () => {
-  try {
-    ringtoneEl.volume = 0;
+async function enableSound() {
+  ringtoneEl.volume = 0;
 
-    await ringtoneEl.play();
+  await ringtoneEl.play();
 
-    await new Promise(resolve =>
-      setTimeout(resolve, 250)
-    );
-
-    ringtoneEl.pause();
-    ringtoneEl.currentTime = 0;
-    ringtoneEl.volume = 1;
-
-    soundUnlocked = true;
-    enableSoundBtn.style.display = 'none';
-
-    console.log('WEB AUDIO UNLOCKED');
-
-    if (pendingConnect) {
-      pendingConnect = false;
-      connectToRoom();
-    }
-
-} catch (err) {
-  ringtoneEl.volume = 1;
-
-  console.error(
-    'WEB AUDIO UNLOCK FAILED:',
-    err.name,
-    err.message,
-    err
+  await new Promise(resolve =>
+    setTimeout(resolve, 250)
   );
 
-  statusEl.textContent =
-    'Geluid fout: ' +
-    err.name +
-    ' - ' +
-    err.message;
-}
+  ringtoneEl.pause();
+  ringtoneEl.currentTime = 0;
+  ringtoneEl.volume = 1;
+
+  console.log('WEB AUDIO UNLOCKED');
 };
 
 function connectToRoom() {
