@@ -505,7 +505,14 @@ rejectIncoming.onclick = () => {
 
   incomingCallBox.style.display = 'none';
 
-  socket.emit('reject-call', { roomId });
+  const message = prompt(
+    'Korte reden voor de beller?'
+  );
+
+  socket.emit('reject-call', {
+    roomId,
+    message: (message || '').trim().slice(0, 100)
+  });
 
   statusEl.textContent = 'Oproep geweigerd';
 };
