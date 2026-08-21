@@ -319,19 +319,21 @@ joinBtn.onclick = async () => {
     return;
   }
 
-  // EERSTE KEER: geluid eerst inschakelen
-  if (!soundUnlocked) {
-    pendingConnect = true;
-
-    enableSoundBtn.style.display = 'block';
+  // VERBINDEN
+  try {
+    await enableSound();
+  } catch (err) {
+    console.error(
+      'Geluid inschakelen mislukt:',
+      err
+    );
 
     statusEl.textContent =
-      'Klik Geluid inschakelen';
+      'Geluid kon niet worden ingeschakeld';
 
     return;
   }
 
-  // GELUID IS AL INGESCHAKELD
   connectToRoom();
 };
 
