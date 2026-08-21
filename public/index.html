@@ -114,6 +114,18 @@
     <p id="status">Nog niet verbonden</p>
     <div id="messageBox"></div>
 
+    <div id="" style="display:none; margin-top:20px;">
+      <div id="incomingCallText" style="margin-bottom:12px;"></div>
+
+      <button id="rejectIncoming" class="button">
+        Weigeren
+      </button>
+
+      <button id="acceptIncoming" class="button">
+        Opnemen
+      </button>
+    </div>
+
   </div>
       <audio id="ringtone" preload="auto" loop>
       <source src="/ringtone.mp3" type="audio/mpeg">
@@ -135,6 +147,18 @@
   const ringtoneEl = document.getElementById('ringtone');
   const messageBox = document.getElementById('messageBox');
 
+  const incomingCallBox =
+  document.getElementById('incomingCallBox');
+
+  const incomingCallText =
+  document.getElementById('incomingCallText');
+
+  const rejectIncoming =
+  document.getElementById('rejectIncoming');
+
+  const acceptIncoming =
+  document.getElementById('acceptIncoming');
+
 	let myName = '';
 	let remoteName = '';
 
@@ -144,6 +168,10 @@
   let callTimer = null;
 
   let joinedRoom = false;
+
+  let ringtoneContext = null;
+  let ringtoneBuffer = null;
+  let ringtoneSource = null;
 
   const rtcConfig = {
     iceServers: [
@@ -175,15 +203,51 @@
   }
 
 function startRingtone() {
-  ringtoneEl.currentTime = 0;
-  ringtoneEl.play().catch(err => {
-    console.log('Ringtone kon niet starten:', err);
-  });
+  if (!ringtoneContext || !ringtoneBuffer) {
+    console.log('Ringtone nog niet voorbereid');
+    return;
+  }
+
+  stopRingtone();
+
+  ringtoneSource = ringtoneContext.createBufferSource();
+  ringtoneSource.buffer = ringtoneBuffer;
+  ringtoneSource.loop = true;
+  ringtoneSource.connect(ringtoneContext.destination);
+  ringtoneSource.start();
 }
 
 function stopRingtone() {
-  ringtoneEl.pause();
-  ringtoneEl.currentTime = 0;
+  if (ringtoneSource) {
+    try {
+      ringtoneSource.stop();
+    } catch (e) {
+    }
+
+    ringtoneSource.disconnect();
+    ringtoneSource = null;
+  }
+}
+
+async function unlockRingtone() {
+  try {
+    if (!ringtoneContext) {
+      ringtoneContext = new AudioContext();
+    }
+
+    await ringtoneContext.resume();
+
+    if (!ringtoneBuffer) {
+      const response = await fetch('/ringtone.mp3');
+      const arrayBuffer = await response.arrayBuffer();
+      ringtoneBuffer =
+        await ringtoneContext.decodeAudioData(arrayBuffer);
+    }
+
+    console.log('Ringtone audio klaar');
+  } catch (err) {
+    console.log('Ringtone voorbereiden mislukt:', err);
+  }
 }
 
 function createPeerConnection() {
@@ -269,6 +333,8 @@ joinBtn.onclick = async () => {
 
     return;
   }
+
+  await unlockRingtone();
 
   roomId = roomInput.value.trim();
   const pin = pinInput.value.trim();
@@ -397,35 +463,53 @@ callTimer = setTimeout(() => {
 }
 };
 
-socket.on('incoming-call', async ({ from }) => {
-    
-  startRingtone();
+socket.on('incoming-call', ({ from }) => {
   remoteName = from;
 
+  incomingCallText.textContent =
+    from + ' belt je.';
 
-  const ok = confirm(from + ' belt je. Opnemen?');
+  incomingCallBox.style.display = 'block';
 
-  if (!ok) {
-    stopRingtone();
-    socket.emit('reject-call', { roomId });
-    return;
-  }
-
-  stopRingtone();
-  
-  try {
-  await initMedia();
-  createPeerConnection();
-
-  socket.emit('accept-call', { roomId });
-  statusEl.textContent = 'Oproep aangenomen';
-  } catch (err) {
-    console.error('Media fout:', err.name, err.message);
-    statusEl.textContent =
-      'Microfoon fout: ' + err.name + ' - ' + err.message;
-  }
-
+  startRingtone();
 });
+
+rejectIncoming.onclick = () => {
+  stopRingtone();
+
+  incomingCallBox.style.display = 'none';
+
+  socket.emit('reject-call', { roomId });
+
+  statusEl.textContent = 'Oproep geweigerd';
+};
+
+acceptIncoming.onclick = async () => {
+  stopRingtone();
+
+  incomingCallBox.style.display = 'none';
+
+  try {
+    await initMedia();
+    createPeerConnection();
+
+    socket.emit('accept-call', { roomId });
+
+    statusEl.textContent = 'Oproep aangenomen';
+  } catch (err) {
+    console.error(
+      'Media fout:',
+      err.name,
+      err.message
+    );
+
+    statusEl.textContent =
+      'Microfoon fout: ' +
+      err.name +
+      ' - ' +
+      err.message;
+  }
+};
 
 socket.on('call-accepted', async () => {
   clearTimeout(callTimer);
