@@ -112,6 +112,7 @@
 
     <p id="people"></p>
     <p id="status">Nog niet verbonden</p>
+    <p id="audioStatus">Audio uit</p>
     <div id="messageBox"></div>
 
 <div id="incomingCallBox" style="display:none; margin-top:20px;">
@@ -158,6 +159,9 @@
 
   const acceptIncoming =
   document.getElementById('acceptIncoming');
+
+  const audioStatusEl =
+  document.getElementById('audioStatus');
   
 	let myName = '';
 	let remoteName = '';
@@ -265,7 +269,8 @@ function createPeerConnection() {
 
     audio.srcObject = remoteStream;
     audio.volume = 0.8;
-    statusEl.textContent = 'Audio verbonden';
+    audioStatusEl.textContent = 'Audio actief';
+    statusEl.textContent = 'Gesprek verbonden';
   };
 
   localStream.getTracks().forEach((track) => {
@@ -419,6 +424,7 @@ function resetCall() {
   callTimer = null;
 
   stopRingtone();
+  audioStatusEl.textContent = 'Audio uit';
 
   if (pc) {
     pc.close();
