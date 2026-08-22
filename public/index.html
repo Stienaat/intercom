@@ -432,6 +432,7 @@ function resetCall() {
 }
 
 function offerMessage() {
+
   const text = prompt(
     'Geen antwoord. Korte boodschap nalaten?'
   );
@@ -439,6 +440,7 @@ function offerMessage() {
   if (!text) return;
 
   const message = text.trim().slice(0, 100);
+
   if (!message) return;
 
   socket.emit('leave-message', {
@@ -447,20 +449,14 @@ function offerMessage() {
     message
   });
 
-  socket.emit('leave-room', roomId);
-
   resetCall();
 
-  joinedRoom = false;
-  roomId = '';
+  joinBtn.textContent = 'Sluiten';
+  callBtn.disabled = false;
 
-  joinBtn.textContent = 'Verbinden';
-  callBtn.disabled = true;
-
-  peopleEl.textContent = '';
   statusEl.textContent =
-    'Boodschap verstuurd - niet verbonden';
-} 
+    'Boodschap verstuurd';
+}
 
 callBtn.onclick = async () => {
   socket.emit('call-user', { roomId });
@@ -557,6 +553,8 @@ socket.on('call-accepted', async () => {
 socket.on('call-rejected', ({ message } = {}) => {
   resetCall();
 
+  callBtn.disabled = false;
+
   if (message) {
     statusEl.textContent =
       'Oproep geweigerd: ' + message;
@@ -564,6 +562,19 @@ socket.on('call-rejected', ({ message } = {}) => {
     statusEl.textContent =
       'Oproep geweigerd';
   }
+});
+
+socket.on('call-cancelled', () => {
+  resetCall();
+
+  incomingCallBox.style.display = 'none';
+  incomingCallText.textContent = '';
+
+  statusEl.textContent = remoteName
+    ? remoteName + ' is online'
+    : 'Verbonden';
+
+  callBtn.disabled = false;
 });
 
 socket.on('reject-call', ({ roomId, message }) => {
