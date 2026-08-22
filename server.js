@@ -138,19 +138,33 @@ socket.on('reject-call', ({ roomId, message }) => {
     socket.to(roomId).emit('signal', { data });
   });
 
-  socket.on('disconnect', () => {
-    console.log('weg:', socket.id);
+socket.on('disconnect', () => {
+  console.log('weg:', socket.id);
 
-    for (const roomId in rooms) {
-      rooms[roomId].users = rooms[roomId].users.filter(u => u.id !== socket.id);
+  for (const roomId in rooms) {
+    const room = rooms[roomId];
 
-      socket.to(roomId).emit('peer-left');
+    // Zat deze socket werkelijk in deze room?
+    const wasInRoom =
+      room.users.some(u => u.id === socket.id);
 
-      if (rooms[roomId].users.length === 0) {
-        delete rooms[roomId];
-      }
+    if (!wasInRoom) {
+      continue;
     }
-  });
+
+    // Alleen uit zijn eigen room verwijderen
+    room.users =
+      room.users.filter(u => u.id !== socket.id);
+
+    // Alleen de echte andere gebruiker verwittigen
+    socket.to(roomId).emit('peer-left');
+
+    if (room.users.length === 0) {
+      delete rooms[roomId];
+    }
+  }
+});
+
   socket.on('leave-room', (roomId) => {
   const room = rooms[roomId];
   if (!room) return;
