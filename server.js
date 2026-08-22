@@ -144,7 +144,6 @@ socket.on('disconnect', () => {
   for (const roomId in rooms) {
     const room = rooms[roomId];
 
-    // Zat deze socket werkelijk in deze room?
     const wasInRoom =
       room.users.some(u => u.id === socket.id);
 
@@ -152,12 +151,19 @@ socket.on('disconnect', () => {
       continue;
     }
 
-    // Alleen uit zijn eigen room verwijderen
     room.users =
       room.users.filter(u => u.id !== socket.id);
 
-    // Alleen de echte andere gebruiker verwittigen
-    socket.to(roomId).emit('peer-left');
+      console.log(
+      'PEER LEFT:',
+      socket.id,
+      'uit room',
+      roomId
+    );
+
+    io.to(roomId)
+      .except(socket.id)
+      .emit('peer-left');
 
     if (room.users.length === 0) {
       delete rooms[roomId];
