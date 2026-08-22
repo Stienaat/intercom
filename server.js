@@ -13,8 +13,15 @@ const rooms = {};
 io.on('connection', (socket) => {
   console.log('verbonden:', socket.id);
 
-socket.on('join-room', ({ roomId, pin, name }) => {
-  console.log('JOIN:', socket.id, roomId, pin, name);
+socket.on('join-room', ({ roomId, pin, name, clientId }) => {
+  console.log(
+    'JOIN:',
+    socket.id,
+    roomId,
+    pin,
+    name,
+    clientId
+  );
 
   if (!rooms[roomId]) {
     rooms[roomId] = {
@@ -30,27 +37,35 @@ socket.on('join-room', ({ roomId, pin, name }) => {
     return;
   }
 
-  // Oude sockets die niet meer bestaan opruimen
+  // Oude sockets die werkelijk niet meer bestaan opruimen
   room.users = room.users.filter(user =>
     io.sockets.sockets.has(user.id)
   );
 
-  // Deze socket niet dubbel toevoegen
-  const alreadyInRoom =
-    room.users.some(user => user.id === socket.id);
-
-  if (!alreadyInRoom) {
-
-    if (room.users.length >= 2) {
-      socket.emit('join-error', 'Room is bezet');
-      return;
-    }
-
-    room.users.push({
-      id: socket.id,
-      name
-    });
+  // Zelfde toestel opnieuw verbonden?
+  // Dan oude registratie van dat toestel vervangen.
+  if (clientId) {
+    room.users = room.users.filter(user =>
+      user.clientId !== clientId
+    );
   }
+
+  // Deze nieuwe socket mag niet dubbel voorkomen
+  room.users = room.users.filter(user =>
+    user.id !== socket.id
+  );
+
+  // Zijn er daarna nog twee ANDERE toestellen?
+  if (room.users.length >= 2) {
+    socket.emit('join-error', 'Room is bezet');
+    return;
+  }
+
+  room.users.push({
+    id: socket.id,
+    name,
+    clientId
+  });
 
   socket.join(roomId);
 
@@ -62,18 +77,22 @@ socket.on('join-room', ({ roomId, pin, name }) => {
 
   if (room.users.length === 1) {
     socket.emit('joined', {
-      message: 'Je bent binnen. Wacht op tweede persoon.'
+      message:
+        'Je bent binnen. Wacht op tweede persoon.'
     });
     return;
   }
 
   if (room.users.length === 2) {
-
     const currentUser =
-      room.users.find(user => user.id === socket.id);
+      room.users.find(user =>
+        user.id === socket.id
+      );
 
     const otherUser =
-      room.users.find(user => user.id !== socket.id);
+      room.users.find(user =>
+        user.id !== socket.id
+      );
 
     if (!currentUser || !otherUser) {
       return;
