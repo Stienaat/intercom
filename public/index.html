@@ -61,7 +61,20 @@
     .button:disabled {
       opacity: 0.4;
     }
+.button.ready {
+  background: #f57c00;
+  opacity: 1;
+}
 
+.button.active {
+  background: #2e7d32;
+  opacity: 1;
+}
+
+.button.faded {
+  background: #f57c00;
+  opacity: 0.4;
+}
     #people,
     #status {
       margin-top: 18px;
@@ -112,7 +125,7 @@
 
     <p id="people"></p>
     <p id="status">Nog niet verbonden</p>
-    <p id="audioStatus">Audio uit</p>
+  
     <div id="messageBox"></div>
 
 <div id="incomingCallBox" style="display:none; margin-top:20px;">
@@ -159,9 +172,6 @@
 
   const acceptIncoming =
   document.getElementById('acceptIncoming');
-
-  const audioStatusEl =
-  document.getElementById('audioStatus');
   
 	let myName = '';
 	let remoteName = '';
@@ -201,6 +211,35 @@
     const audioTracks = localStream.getAudioTracks();
    
   }
+
+  function updateJoinAvailability() {
+  if (joinedRoom) return;
+
+  const ready =
+    nameInput.value.trim() &&
+    roomInput.value.trim() &&
+    pinInput.value.trim();
+
+  joinBtn.classList.remove('ready', 'active', 'faded');
+  callBtn.classList.remove('ready', 'active', 'faded');
+
+  if (ready) {
+    joinBtn.classList.add('ready');
+    joinBtn.disabled = false;
+  } else {
+    joinBtn.classList.add('faded');
+    joinBtn.disabled = true;
+  }
+
+  callBtn.classList.add('faded');
+  callBtn.disabled = true;
+}
+
+nameInput.addEventListener('input', updateJoinAvailability);
+roomInput.addEventListener('input', updateJoinAvailability);
+pinInput.addEventListener('input', updateJoinAvailability);
+
+updateJoinAvailability();
 
 function startRingtone() {
   ringtoneEl.currentTime = 0;
@@ -269,7 +308,7 @@ function createPeerConnection() {
 
     audio.srcObject = remoteStream;
     audio.volume = 0.8;
-    audioStatusEl.textContent = 'Audio actief';
+  
     statusEl.textContent = 'Gesprek verbonden';
   };
 
@@ -424,7 +463,7 @@ function resetCall() {
   callTimer = null;
 
   stopRingtone();
-  audioStatusEl.textContent = 'Audio uit';
+
 
   if (pc) {
     pc.close();
