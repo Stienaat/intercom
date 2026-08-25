@@ -445,10 +445,19 @@ socket.on('peer-ready', ({ name }) => {
   peopleEl.textContent = 'Verbonden met: ' + remoteName;
   statusEl.textContent = remoteName + ' is online';
 
-  callBtn.disabled = false;
-
   joinedRoom = true;
+
+  // Verbinding actief
   joinBtn.textContent = 'Sluiten';
+  joinBtn.disabled = false;
+  joinBtn.classList.remove('ready', 'faded');
+  joinBtn.classList.add('active');
+
+  // Oproepen is beschikbaar
+  callBtn.textContent = 'Oproepen';
+  callBtn.disabled = false;
+  callBtn.classList.remove('active', 'faded');
+  callBtn.classList.add('ready');
 });
 
   socket.on('signal', handleSignal);
