@@ -77,6 +77,34 @@
   opacity: 1;
 }
 
+#incomingCallBox {
+  position: fixed;
+  inset: 0;
+  display: none;
+
+  background: rgba(0, 0, 0, 0.45);
+
+  align-items: center;
+  justify-content: center;
+
+  z-index: 9999;
+}
+
+.incoming-card {
+  width: min(340px, calc(100% - 40px));
+  background: white;
+  border-radius: 18px;
+  padding: 22px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.incoming-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
 
     #people,
     #status {
@@ -131,17 +159,26 @@
   
     <div id="messageBox"></div>
 
-<div id="incomingCallBox" style="display:none; margin-top:20px;">
-      <div id="incomingCallText" style="margin-bottom:12px;"></div>
+<div id="incomingCallBox">
+  <div class="incoming-card">
 
-      <button id="rejectIncoming" class="button">
+    <div
+      id="incomingCallText"
+      style="font-size:20px; font-weight:600;">
+    </div>
+
+    <div class="incoming-actions">
+      <button id="rejectIncoming" class="button ready">
         Weigeren
       </button>
 
-      <button id="acceptIncoming" class="button">
+      <button id="acceptIncoming" class="button active">
         Opnemen
       </button>
     </div>
+
+  </div>
+</div>
 
   </div>
       <audio id="ringtone" preload="auto" loop>
@@ -587,7 +624,7 @@ socket.on('incoming-call', ({ from }) => {
   incomingCallText.textContent =
     from + ' belt je.';
 
-  incomingCallBox.style.display = 'block';
+  incomingCallBox.style.display = 'flex';
 
   startRingtone();
 });
