@@ -714,9 +714,23 @@ socket.on('peer-left', () => {
 });
 
 socket.on('joined', ({ message }) => {
-  statusEl.textContent = message;
-});
+  joinedRoom = true;
 
+  statusEl.textContent =
+    message || 'Je bent binnen. Wacht op tweede persoon.';
+
+  // In de room: verbinding actief, wachten op tweede persoon
+  joinBtn.textContent = 'Wachten...';
+  joinBtn.disabled = false;
+  joinBtn.classList.remove('ready', 'faded');
+  joinBtn.classList.add('active');
+
+  // Nog niemand om op te roepen
+  callBtn.textContent = 'Oproepen';
+  callBtn.disabled = true;
+  callBtn.classList.remove('ready', 'active');
+  callBtn.classList.add('faded');
+});
 socket.on('join-error', (message) => {
   alert(message);
   statusEl.textContent = message;
