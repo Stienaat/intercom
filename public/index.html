@@ -13,11 +13,16 @@
       color: #222;
     }
 
-    .app {
-      max-width: 420px;
-      margin: 0 auto;
-      padding: 24px;
-    }
+ .app {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 24px;
+  min-height: 100vh;
+  box-sizing: border-box;
+
+  display: flex;
+  flex-direction: column;
+}
 
     h1 {
       margin: 0 0 24px;
@@ -105,11 +110,14 @@
   margin-top: 18px;
 }
 .fs-footer {
-  margin-top: 28px;
+  margin-top: auto;
+  padding-top: 24px;
+
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
+
   font-size: 12px;
   color: #555;
 }
@@ -201,7 +209,6 @@
       freeapps-exchange.com
     </div>
   </div>
-
 
   </div>
       <audio id="ringtone" preload="auto" loop>
