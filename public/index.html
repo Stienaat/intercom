@@ -288,8 +288,8 @@ pc.onconnectionstatechange = () => {
   console.log('connectionState:', pc.connectionState);
 
   if (pc.connectionState === 'connected') {
-
     inCall = true;
+
     statusEl.textContent = 'Gesprek verbonden';
 
     callBtn.textContent = 'Ophangen';
@@ -299,6 +299,7 @@ pc.onconnectionstatechange = () => {
     callBtn.classList.add('active');
   }
 };
+
   pc.oniceconnectionstatechange = () => {
     console.log('iceConnectionState:', pc.iceConnectionState);
   };
