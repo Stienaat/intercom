@@ -188,6 +188,7 @@
   let callTimer = null;
 
   let joinedRoom = false;
+  let inCall = false;
 
   const rtcConfig = {
     iceServers: [
@@ -286,11 +287,21 @@ function unlockRingtone() {
 function createPeerConnection() {
   pc = new RTCPeerConnection(rtcConfig);
 
-  pc.onconnectionstatechange = () => {
-    console.log('connectionState:', pc.connectionState);
-    statusEl.textContent = 'Status: ' + pc.connectionState;
-  };
+pc.onconnectionstatechange = () => {
+  console.log('connectionState:', pc.connectionState);
 
+  if (pc.connectionState === 'connected') {
+
+    inCall = true;
+    statusEl.textContent = 'Gesprek verbonden';
+
+    callBtn.textContent = 'Ophangen';
+    callBtn.disabled = false;
+
+    callBtn.classList.remove('ready', 'faded');
+    callBtn.classList.add('active');
+  }
+};
   pc.oniceconnectionstatechange = () => {
     console.log('iceConnectionState:', pc.iceConnectionState);
   };
@@ -510,30 +521,57 @@ function offerMessage() {
 }
 
 callBtn.onclick = async () => {
+
+  // ACTIEF GESPREK → OPHANGEN
+  if (inCall) {
+    socket.emit('end-call', { roomId });
+
+    resetCall();
+
+    inCall = false;
+
+    callBtn.textContent = 'Oproepen';
+    callBtn.disabled = false;
+
+    callBtn.classList.remove('active', 'faded');
+    callBtn.classList.add('ready');
+
+    statusEl.textContent = remoteName
+      ? remoteName + ' is online'
+      : 'Verbonden';
+
+    return;
+  }
+
+  // GEWONE OPROEP STARTEN
   socket.emit('call-user', { roomId });
+
   statusEl.textContent = 'Oproep verstuurd...';
 
-clearTimeout(callTimer);
+  clearTimeout(callTimer);
 
-callTimer = setTimeout(() => {
-  socket.emit('cancel-call', { roomId });
-  resetCall();
-  offerMessage();
-}, 25000);
+  callTimer = setTimeout(() => {
+    socket.emit('cancel-call', { roomId });
+    resetCall();
+    offerMessage();
+  }, 25000);
 
   try {
     await initMedia();
     createPeerConnection();
   } catch (err) {
-  console.error(
-    'Media fout:',
-    err.name,
-    err.message
-  );
+    console.error(
+      'Media fout:',
+      err.name,
+      err.message
+    );
 
-  statusEl.textContent =
-    'Microfoon fout: ' + err.name + ' - ' + err.message;
-}
+    statusEl.textContent =
+      'Microfoon fout: ' +
+      err.name +
+      ' - ' +
+      err.message;
+  }
 };
 
 socket.on('incoming-call', ({ from }) => {
@@ -685,6 +723,22 @@ socket.on('joined', ({ message }) => {
 socket.on('join-error', (message) => {
   alert(message);
   statusEl.textContent = message;
+});
+
+socket.on('call-ended', () => {
+  resetCall();
+
+  inCall = false;
+
+  callBtn.textContent = 'Oproepen';
+  callBtn.disabled = false;
+
+  callBtn.classList.remove('active', 'faded');
+  callBtn.classList.add('ready');
+
+  statusEl.textContent = remoteName
+    ? remoteName + ' is online'
+    : 'Verbonden';
 });
   
 </script>

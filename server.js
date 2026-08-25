@@ -204,6 +204,10 @@ socket.on('disconnect', () => {
   }
 });
 
+socket.on('end-call', ({ roomId }) => {
+  socket.to(roomId).emit('call-ended');
+});
+
 
 });
 
