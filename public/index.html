@@ -801,6 +801,9 @@ callBtn.classList.add('faded');
 
 joinBtn.disabled = true;
 callBtn.disabled = true;
+
+updateJoinAvailability();
+
 });
 
 socket.on('joined', ({ message }) => {
