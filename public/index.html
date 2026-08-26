@@ -433,25 +433,39 @@ joinBtn.onclick = async () => {
 
     resetCall();
 
-    joinedRoom = false;
-    roomId = '';
+joinedRoom = false;
+inCall = false;
+roomId = '';
 
-    joinBtn.textContent = 'Verbinden';
-    callBtn.disabled = true;
-
-    peopleEl.textContent = '';
-    statusEl.textContent = 'Niet verbonden';
-
-    nameInput.value = '';
+nameInput.value = '';
 roomInput.value = '';
 pinInput.value = '';
 
+peopleEl.textContent = '';
 messageBox.textContent = '';
+
 incomingCallBox.style.display = 'none';
 incomingCallText.textContent = '';
 
-    return;
-  }
+statusEl.textContent = 'Nog niet verbonden';
+
+joinBtn.textContent = 'Verbinden';
+callBtn.textContent = 'Oproepen';
+
+joinBtn.classList.remove('ready', 'active');
+joinBtn.classList.add('faded');
+
+callBtn.classList.remove('ready', 'active');
+callBtn.classList.add('faded');
+
+joinBtn.disabled = true;
+callBtn.disabled = true;
+
+updateJoinAvailability();
+
+return;
+
+}
 
   // VERBINDEN
   try {
